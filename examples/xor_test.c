@@ -58,7 +58,7 @@ int main()
 	for(i = 0; i < fann_length_train_data(data); i++)
 	{
 		fann_reset_MSE(ann);
-		calc_out = fann_test(ann, data->input[i], data->output[i]);
+		calc_out = fann_test(ann, data->input[i], data->output[i], data->weight[i]);
 #ifdef FIXEDFANN
 		printf("XOR test (%d, %d) -> %d, should be %d, difference=%f\n",
 			   data->input[i][0], data->input[i][1], calc_out[0], data->output[i][0],

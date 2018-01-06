@@ -896,7 +896,7 @@ FANN_EXTERNAL struct fann* FANN_API fann_copy(struct fann* orig)
     copy->learning_momentum = orig->learning_momentum;
     copy->connection_rate = orig->connection_rate;
     copy->network_type = orig->network_type;
-    copy->num_MSE = orig->num_MSE;
+    copy->weight_MSE = orig->weight_MSE;
     copy->MSE_value = orig->MSE_value;
     copy->num_bit_fail = orig->num_bit_fail;
     copy->bit_fail_limit = orig->bit_fail_limit;
@@ -1595,7 +1595,7 @@ struct fann *fann_allocate_structure(unsigned int num_layers)
 	ann->prev_train_slopes = NULL;
 	ann->prev_weights_deltas = NULL;
 	ann->training_algorithm = FANN_TRAIN_RPROP;
-	ann->num_MSE = 0;
+	ann->weight_MSE = 0;
 	ann->MSE_value = 0;
 	ann->num_bit_fail = 0;
 	ann->bit_fail_limit = (fann_type)0.35;

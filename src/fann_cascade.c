@@ -210,7 +210,7 @@ float fann_train_outputs_epoch(struct fann *ann, struct fann_train_data *data)
 	for(i = 0; i < data->num_data; i++)
 	{
 		fann_run(ann, data->input[i]);
-		fann_compute_MSE(ann, data->output[i]);
+		fann_compute_MSE(ann, data->output[i], data->weight[i]);
 		fann_update_slopes_batch(ann, ann->last_layer - 1, ann->last_layer - 1);
 	}
 

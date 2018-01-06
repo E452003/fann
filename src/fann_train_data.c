@@ -75,6 +75,7 @@ FANN_EXTERNAL void FANN_API fann_destroy_train(struct fann_train_data *data)
 		fann_safe_free(data->output[0]);
 	fann_safe_free(data->input);
 	fann_safe_free(data->output);
+	fann_safe_free(data->weight);
 	fann_safe_free(data);
 }
 
@@ -91,7 +92,7 @@ FANN_EXTERNAL float FANN_API fann_test_data(struct fann *ann, struct fann_train_
 
 	for(i = 0; i != data->num_data; i++)
 	{
-		fann_test(ann, data->input[i], data->output[i]);
+		fann_test(ann, data->input[i], data->output[i], data->weight[i]);
 	}
 
 	return fann_get_MSE(ann);
@@ -116,7 +117,7 @@ float fann_train_epoch_quickprop(struct fann *ann, struct fann_train_data *data)
 	for(i = 0; i < data->num_data; i++)
 	{
 		fann_run(ann, data->input[i]);
-		fann_compute_MSE(ann, data->output[i]);
+		fann_compute_MSE(ann, data->output[i], data->weight[i]);
 		fann_backpropagate_MSE(ann);
 		fann_update_slopes_batch(ann, ann->first_layer + 1, ann->last_layer - 1);
 	}
@@ -142,7 +143,7 @@ float fann_train_epoch_irpropm(struct fann *ann, struct fann_train_data *data)
 	for(i = 0; i < data->num_data; i++)
 	{
 		fann_run(ann, data->input[i]);
-		fann_compute_MSE(ann, data->output[i]);
+		fann_compute_MSE(ann, data->output[i], data->weight[i]);
 		fann_backpropagate_MSE(ann);
 		fann_update_slopes_batch(ann, ann->first_layer + 1, ann->last_layer - 1);
 	}
@@ -169,7 +170,7 @@ float fann_train_epoch_sarprop(struct fann *ann, struct fann_train_data *data)
 	for(i = 0; i < data->num_data; i++)
 	{
 		fann_run(ann, data->input[i]);
-		fann_compute_MSE(ann, data->output[i]);
+		fann_compute_MSE(ann, data->output[i], data->weight[i]);
 		fann_backpropagate_MSE(ann);
 		fann_update_slopes_batch(ann, ann->first_layer + 1, ann->last_layer - 1);
 	}
@@ -193,7 +194,7 @@ float fann_train_epoch_batch(struct fann *ann, struct fann_train_data *data)
 	for(i = 0; i < data->num_data; i++)
 	{
 		fann_run(ann, data->input[i]);
-		fann_compute_MSE(ann, data->output[i]);
+		fann_compute_MSE(ann, data->output[i], data->weight[i]);
 		fann_backpropagate_MSE(ann);
 		fann_update_slopes_batch(ann, ann->first_layer + 1, ann->last_layer - 1);
 	}
@@ -214,7 +215,7 @@ float fann_train_epoch_incremental(struct fann *ann, struct fann_train_data *dat
 
 	for(i = 0; i != data->num_data; i++)
 	{
-		fann_train(ann, data->input[i], data->output[i]);
+		fann_train(ann, data->input[i], data->output[i], data->weight[i]);
 	}
 
 	return fann_get_MSE(ann);
@@ -339,6 +340,9 @@ FANN_EXTERNAL void FANN_API fann_shuffle_train_data(struct fann_train_data *trai
 				train_data->output[dat][elem] = train_data->output[swap][elem];
 				train_data->output[swap][elem] = temp;
 			}
+			temp = train_data->weight[dat];
+			train_data->weight[dat] = train_data->weight[swap];
+			train_data->weight[swap] = temp;
 		}
 	}
 }
@@ -553,6 +557,17 @@ FANN_EXTERNAL struct fann_train_data *FANN_API fann_merge_train_data(struct fann
 		dest->output[i] = data_output;
 		data_output += dest->num_output;
 	}
+
+	dest->weight = (fann_type *) calloc(dest->num_data, sizeof(fann_type));
+	if(dest->weight == NULL)
+	{
+		fann_error((struct fann_error*)data1, FANN_E_CANT_ALLOCATE_MEM);
+		fann_destroy_train(dest);
+		return NULL;
+	}
+	memcpy(dest->weight, data1->weight, data1->num_data * sizeof(fann_type));
+	memcpy(dest->weight + data1->num_data, data2->weight, data2->num_data * sizeof(fann_type));
+
 	return dest;
 }
 
@@ -620,6 +635,15 @@ FANN_EXTERNAL struct fann_train_data *FANN_API fann_duplicate_train_data(struct 
 		dest->output[i] = data_output;
 		data_output += dest->num_output;
 	}
+
+	dest->weight = (fann_type *) calloc(dest->num_data, sizeof(fann_type));
+	if(dest->weight == NULL)
+	{
+		fann_error((struct fann_error*)data, FANN_E_CANT_ALLOCATE_MEM);
+		fann_destroy_train(dest);
+		return NULL;
+	}
+	memcpy(dest->weight, data->weight, dest->num_data * sizeof(fann_type));
 	return dest;
 }
 
@@ -691,6 +715,16 @@ FANN_EXTERNAL struct fann_train_data *FANN_API fann_subset_train_data(struct fan
 		dest->output[i] = data_output;
 		data_output += dest->num_output;
 	}
+
+	dest->weight = (fann_type *) calloc(dest->num_data, sizeof(fann_type));
+	if(dest->weight == NULL)
+	{
+		fann_error((struct fann_error*)data, FANN_E_CANT_ALLOCATE_MEM);
+		fann_destroy_train(dest);
+		return NULL;
+	}
+   memcpy(dest->weight, data->weight, dest->num_data * sizeof(fann_type));
+
 	return dest;
 }
 
@@ -798,6 +832,29 @@ int fann_save_train_internal_fd(struct fann_train_data *data, FILE * file, const
 #endif
 		}
 		fprintf(file, "\n");
+
+
+#ifndef FIXEDFANN
+		if(save_as_fixed)
+		{
+			fprintf(file, "%d ", (int) (data->weight[j] * multiplier));
+		}
+		else
+		{
+			if(((int) floor(data->weight[j] + 0.5) * 1000000) ==
+				((int) floor(data->weight[j] * 1000000.0 + 0.5)))
+			{
+				fprintf(file, "%d ", (int) data->weight[j]);
+			}
+			else
+			{
+				fprintf(file, "%f ", data->weight[j]);
+			}
+		}
+#else
+		fprintf(file, FANNPRINTF " ", data->weight[j]);
+#endif
+		fprintf(file, "\n");
 	}
 	
 	return retval;
@@ -863,10 +920,18 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train(unsigned int n
 		data->output[i] = data_output;
 		data_output += num_output;
 	}
+
+	data->weight = (fann_type *) calloc(num_data, sizeof(fann_type));
+	if(data->weight == NULL)
+	{
+		fann_error(NULL, FANN_E_CANT_ALLOCATE_MEM);
+		fann_destroy_train(data);
+		return NULL;
+	}
 	return data;
 }
 
-FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_pointer_array(unsigned int num_data, unsigned int num_input, fann_type **input, unsigned int num_output, fann_type **output)
+FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_pointer_array(unsigned int num_data, unsigned int num_input, fann_type **input, unsigned int num_output, fann_type **output, fann_type* weight)
 {
 	unsigned int i;
     struct fann_train_data *data;
@@ -880,11 +945,12 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_pointer_array(
 		memcpy(data->input[i], input[i], num_input*sizeof(fann_type));
 		memcpy(data->output[i], output[i], num_output*sizeof(fann_type));
     }
-    
+
+	memcpy(data->weight, weight, num_data*sizeof(fann_type));
 	return data;
 }
 
-FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_array(unsigned int num_data, unsigned int num_input, fann_type *input, unsigned int num_output, fann_type *output)
+FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_array(unsigned int num_data, unsigned int num_input, fann_type *input, unsigned int num_output, fann_type *output, fann_type weight)
 {
 	unsigned int i;
     struct fann_train_data *data;
@@ -897,6 +963,7 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_array(unsigned
     {
 		memcpy(data->input[i], &input[i*num_input], num_input*sizeof(fann_type));
 		memcpy(data->output[i], &output[i*num_output], num_output*sizeof(fann_type));
+		data->weight[i] = weight;
     }
     
 	return data;
@@ -913,7 +980,8 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_from_callback(
                                                                  unsigned int,
                                                                  unsigned int,
                                                                  fann_type * ,
-                                                                 fann_type * ))
+                                                                 fann_type * ,
+                                                                 fann_type ))
 {
     unsigned int i;
 	struct fann_train_data *data = fann_create_train(num_data, num_input, num_output);
@@ -924,7 +992,7 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_from_callback(
 
     for( i = 0; i != num_data; i++)
     {
-        (*user_function)(i, num_input, num_output, data->input[i], data->output[i]);
+        (*user_function)(i, num_input, num_output, data->input[i], data->output[i], data->weight[i]);
     }
 
     return data;
@@ -988,6 +1056,14 @@ struct fann_train_data *fann_read_train_from_fd(FILE * file, const char *filenam
 				fann_destroy_train(data);
 				return NULL;
 			}
+		}
+		line++;
+
+		if(fscanf(file, FANNSCANF " ", &data->weight[i]) != 1)
+		{
+			fann_error(NULL, FANN_E_CANT_READ_TD, filename, line);
+			fann_destroy_train(data);
+			return NULL;
 		}
 		line++;
 	}

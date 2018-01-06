@@ -34,7 +34,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_batch_parallel(struct fann *ann, s
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -71,7 +71,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_batch_parallel(struct fann *ann, s
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	free(ann_vect);
@@ -114,7 +114,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_irpropm_parallel(struct fann *ann,
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -191,7 +191,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_irpropm_parallel(struct fann *ann,
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	free(ann_vect);
@@ -233,7 +233,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_quickprop_parallel(struct fann *an
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -327,7 +327,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_quickprop_parallel(struct fann *an
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	free(ann_vect);
@@ -369,7 +369,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_sarprop_parallel(struct fann *ann,
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+         fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -402,7 +402,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_sarprop_parallel(struct fann *ann,
     	for(i=0;i<(int)threadnumb;++i)
     	{
     		ann->MSE_value+= ann_vect[i]->MSE_value;
-    		ann->num_MSE+=ann_vect[i]->num_MSE;
+    		ann->weight_MSE+=ann_vect[i]->weight_MSE;
     	}
 
     	MSE = fann_get_MSE(ann);
@@ -502,7 +502,7 @@ FANN_EXTERNAL float FANN_API fann_train_epoch_incremental_mod(struct fann *ann, 
 
 	for(i = 0; i != data->num_data; i++)
 	{
-		fann_train(ann, data->input[i], data->output[i]);
+		fann_train(ann, data->input[i], data->output[i], data->weight[i]);
 	}
 
 	return fann_get_MSE(ann);

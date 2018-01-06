@@ -332,8 +332,9 @@ namespace FANN {
         */
         void set_train_data(unsigned int num_data,
                             unsigned int num_input, fann_type **input,
-                            unsigned int num_output, fann_type **output) {
-            set_train_data(fann_create_train_pointer_array(num_data, num_input, input, num_output, output));
+                            unsigned int num_output, fann_type **output,
+                            fann_type *weight) {
+            set_train_data(fann_create_train_pointer_array(num_data, num_input, input, num_output, output, weight));
         }
 
         /* Method: set_train_data
@@ -356,8 +357,9 @@ namespace FANN {
         */
         void set_train_data(unsigned int num_data,
                             unsigned int num_input, fann_type *input,
-                            unsigned int num_output, fann_type *output) {
-            set_train_data(fann_create_train_array(num_data, num_input, input, num_output, output));
+                            unsigned int num_output, fann_type *output,
+                            fann_type weight) {
+            set_train_data(fann_create_train_array(num_data, num_input, input, num_output, output, weight));
         }
 
     private:
@@ -404,7 +406,8 @@ namespace FANN {
                                                                        unsigned int,
                                                                        unsigned int,
                                                                        fann_type *,
-                                                                       fann_type *)) {
+                                                                       fann_type *,
+                                                                       fann_type )) {
             destroy_train();
             train_data = fann_create_train_from_callback(num_data, num_input, num_output, user_function);
         }

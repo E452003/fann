@@ -709,9 +709,9 @@ namespace FANN {
            	
    	        This function appears in FANN >= 1.0.0.
          */
-        void train(fann_type *input, fann_type *desired_output) {
+        void train(fann_type *input, fann_type *desired_output, fann_type weight) {
             if (ann != NULL) {
-                fann_train(ann, input, desired_output);
+                fann_train(ann, input, desired_output, weight);
             }
         }
 
@@ -804,10 +804,10 @@ namespace FANN {
            
            This function appears in FANN >= 1.0.0.
         */
-        fann_type *test(fann_type *input, fann_type *desired_output) {
+        fann_type *test(fann_type *input, fann_type *desired_output, fann_type weight) {
             fann_type *output = NULL;
             if (ann != NULL) {
-                output = fann_test(ann, input, desired_output);
+                output = fann_test(ann, input, desired_output, weight);
             }
             return output;
         }

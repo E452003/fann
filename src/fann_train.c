@@ -91,11 +91,11 @@ fann_type fann_activation(struct fann * ann, unsigned int activation_function, f
 /* Trains the network with the backpropagation algorithm.
  */
 FANN_EXTERNAL void FANN_API fann_train(struct fann *ann, fann_type * input,
-									   fann_type * desired_output)
+									   fann_type * desired_output, fann_type weight)
 {
 	fann_run(ann, input);
 
-	fann_compute_MSE(ann, desired_output);
+	fann_compute_MSE(ann, desired_output, weight);
 
 	fann_backpropagate_MSE(ann);
 
@@ -107,7 +107,7 @@ FANN_EXTERNAL void FANN_API fann_train(struct fann *ann, fann_type * input,
 /* INTERNAL FUNCTION
    Helper function to update the MSE value and return a diff which takes symmetric functions into account
 */
-fann_type fann_update_MSE(struct fann *ann, struct fann_neuron* neuron, fann_type neuron_diff)
+fann_type fann_update_MSE(struct fann *ann, struct fann_neuron* neuron, fann_type neuron_diff, fann_type weight)
 {
 	float neuron_diff2;
 	
@@ -143,7 +143,7 @@ fann_type fann_update_MSE(struct fann *ann, struct fann_neuron* neuron, fann_typ
 		neuron_diff2 = (float) (neuron_diff * neuron_diff);
 #endif
 
-	ann->MSE_value += neuron_diff2;
+	ann->MSE_value += neuron_diff2 * (float) weight;
 
 	/*printf("neuron_diff %f = (%f - %f)[/2], neuron_diff2=%f, sum=%f, MSE_value=%f, num_MSE=%d\n", neuron_diff, *desired_output, neuron_value, neuron_diff2, last_layer_begin->sum, ann->MSE_value, ann->num_MSE); */
 	if(fann_abs(neuron_diff) >= ann->bit_fail_limit)
@@ -157,7 +157,7 @@ fann_type fann_update_MSE(struct fann *ann, struct fann_neuron* neuron, fann_typ
 /* Tests the network.
  */
 FANN_EXTERNAL fann_type *FANN_API fann_test(struct fann *ann, fann_type * input,
-											fann_type * desired_output)
+											fann_type * desired_output, fann_type weight)
 {
 	fann_type neuron_value;
 	fann_type *output_begin = fann_run(ann, input);
@@ -173,12 +173,12 @@ FANN_EXTERNAL fann_type *FANN_API fann_test(struct fann *ann, fann_type * input,
 
 		neuron_diff = (*desired_output - neuron_value);
 
-		neuron_diff = fann_update_MSE(ann, output_neuron, neuron_diff);
+		neuron_diff = fann_update_MSE(ann, output_neuron, neuron_diff, weight);
 		
 		desired_output++;
 		output_neuron++;
 
-		ann->num_MSE++;
+		ann->weight_MSE += weight;
 	}
 
 	return output_begin;
@@ -188,9 +188,9 @@ FANN_EXTERNAL fann_type *FANN_API fann_test(struct fann *ann, fann_type * input,
  */
 FANN_EXTERNAL float FANN_API fann_get_MSE(struct fann *ann)
 {
-	if(ann->num_MSE)
+	if(ann->weight_MSE > 0)
 	{
-		return ann->MSE_value / (float) ann->num_MSE;
+		return ann->MSE_value / (float) ann->weight_MSE;
 	}
 	else
 	{
@@ -208,7 +208,7 @@ FANN_EXTERNAL unsigned int FANN_API fann_get_bit_fail(struct fann *ann)
 FANN_EXTERNAL void FANN_API fann_reset_MSE(struct fann *ann)
 {
 /*printf("resetMSE %d %f\n", ann->num_MSE, ann->MSE_value);*/
-	ann->num_MSE = 0;
+	ann->weight_MSE = 0;
 	ann->MSE_value = 0;
 	ann->num_bit_fail = 0;
 }
@@ -224,7 +224,7 @@ FANN_EXTERNAL void FANN_API fann_reset_MSE(struct fann *ann)
 	After this train_errors in the output layer will be set to:
 	neuron_value_derived * (desired_output - neuron_value)
  */
-void fann_compute_MSE(struct fann *ann, fann_type * desired_output)
+void fann_compute_MSE(struct fann *ann, fann_type * desired_output, fann_type weight)
 {
 	fann_type neuron_value, neuron_diff, *error_it = 0, *error_begin = 0;
 	struct fann_neuron *last_layer_begin = (ann->last_layer - 1)->first_neuron;
@@ -259,7 +259,7 @@ void fann_compute_MSE(struct fann *ann, fann_type * desired_output)
 		neuron_value = last_layer_begin->value;
 		neuron_diff = *desired_output - neuron_value;
 
-		neuron_diff = fann_update_MSE(ann, last_layer_begin, neuron_diff);
+		neuron_diff = fann_update_MSE(ann, last_layer_begin, neuron_diff, weight);
 
 		if(ann->train_error_function)
 		{						/* TODO make switch when more functions */
@@ -278,7 +278,7 @@ void fann_compute_MSE(struct fann *ann, fann_type * desired_output)
 		desired_output++;
 		error_it++;
 
-		ann->num_MSE++;
+		ann->weight_MSE += weight;
 	}
 }
 

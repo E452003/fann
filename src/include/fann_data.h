@@ -575,10 +575,10 @@ struct fann
 
 	/* the number of data used to calculate the mean square error.
 	 */
-	unsigned int num_MSE;
+	fann_type weight_MSE;
 
 	/* the total error value.
-	 * the real mean square error is MSE_value/num_MSE
+	 * the real mean square error is MSE_value/weight_MSE
 	 */
 	float MSE_value;
 

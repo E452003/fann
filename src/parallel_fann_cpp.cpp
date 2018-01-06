@@ -34,7 +34,7 @@ float train_epoch_batch_parallel(struct fann *ann, struct fann_train_data *data,
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -71,7 +71,7 @@ float train_epoch_batch_parallel(struct fann *ann, struct fann_train_data *data,
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);
@@ -112,7 +112,7 @@ float train_epoch_irpropm_parallel(struct fann *ann, struct fann_train_data *dat
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -189,7 +189,7 @@ float train_epoch_irpropm_parallel(struct fann *ann, struct fann_train_data *dat
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);
@@ -229,7 +229,7 @@ float train_epoch_quickprop_parallel(struct fann *ann, struct fann_train_data *d
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -323,7 +323,7 @@ float train_epoch_quickprop_parallel(struct fann *ann, struct fann_train_data *d
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);
@@ -362,7 +362,7 @@ float train_epoch_sarprop_parallel(struct fann *ann, struct fann_train_data *dat
 		{
 			j=omp_get_thread_num();
 			fann_run(ann_vect[j], data->input[i]);
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -394,7 +394,7 @@ float train_epoch_sarprop_parallel(struct fann *ann, struct fann_train_data *dat
     	for(i=0;i<(int)threadnumb;++i)
     	{
     		ann->MSE_value+= ann_vect[i]->MSE_value;
-    		ann->num_MSE+=ann_vect[i]->num_MSE;
+    		ann->weight_MSE+=ann_vect[i]->weight_MSE;
     	}
 
     	const float MSE = fann_get_MSE(ann);
@@ -493,7 +493,7 @@ float train_epoch_incremental_mod(struct fann *ann, struct fann_train_data *data
 
 	for(i = 0; i != data->num_data; i++)
 	{
-		fann_train(ann, data->input[i], data->output[i]);
+		fann_train(ann, data->input[i], data->output[i], data->weight[i]);
 	}
 
 	return fann_get_MSE(ann);
@@ -533,7 +533,7 @@ float train_epoch_batch_parallel(struct fann *ann, struct fann_train_data *data,
 				predicted_outputs[i][k]=temp_predicted_output[k];
 			}
 
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -570,7 +570,7 @@ float train_epoch_batch_parallel(struct fann *ann, struct fann_train_data *data,
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);
@@ -615,7 +615,7 @@ float train_epoch_irpropm_parallel(struct fann *ann, struct fann_train_data *dat
 				{
 					predicted_outputs[i][k]=temp_predicted_output[k];
 				}
-				fann_compute_MSE(ann_vect[j], data->output[i]);
+				fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 				fann_backpropagate_MSE(ann_vect[j]);
 				fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 			}
@@ -692,7 +692,7 @@ float train_epoch_irpropm_parallel(struct fann *ann, struct fann_train_data *dat
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);
@@ -737,7 +737,7 @@ float train_epoch_quickprop_parallel(struct fann *ann, struct fann_train_data *d
 				{
 					predicted_outputs[i][k]=temp_predicted_output[k];
 				}
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -831,7 +831,7 @@ float train_epoch_quickprop_parallel(struct fann *ann, struct fann_train_data *d
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);
@@ -876,7 +876,7 @@ float train_epoch_sarprop_parallel(struct fann *ann, struct fann_train_data *dat
 				{
 					predicted_outputs[i][k]=temp_predicted_output[k];
 				}
-			fann_compute_MSE(ann_vect[j], data->output[i]);
+			fann_compute_MSE(ann_vect[j], data->output[i], data->weight[i]);
 			fann_backpropagate_MSE(ann_vect[j]);
 			fann_update_slopes_batch(ann_vect[j], ann_vect[j]->first_layer + 1, ann_vect[j]->last_layer - 1);
 		}
@@ -908,7 +908,7 @@ float train_epoch_sarprop_parallel(struct fann *ann, struct fann_train_data *dat
     	for(i=0;i<(int)threadnumb;++i)
     	{
     		ann->MSE_value+= ann_vect[i]->MSE_value;
-    		ann->num_MSE+=ann_vect[i]->num_MSE;
+    		ann->weight_MSE+=ann_vect[i]->weight_MSE;
     	}
 
     	const float MSE = fann_get_MSE(ann);
@@ -1014,7 +1014,7 @@ float train_epoch_incremental_mod(struct fann *ann, struct fann_train_data *data
 			predicted_outputs[i][k]=temp_predicted_output[k];
 		}
 
-		fann_compute_MSE(ann, data->output[i]);
+		fann_compute_MSE(ann, data->output[i], data->weight[i]);
 
 		fann_backpropagate_MSE(ann);
 
@@ -1051,14 +1051,14 @@ float test_data_parallel(struct fann *ann, struct fann_train_data *data, const u
 			for(i = 0; i < (int)data->num_data; ++i)
 			{
 				j=omp_get_thread_num();
-				fann_test(ann_vect[j], data->input[i],data->output[i]);
+				fann_test(ann_vect[j], data->input[i],data->output[i], data->weight[i]);
 			}
 		}
 	//merge of MSEs
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);
@@ -1092,7 +1092,7 @@ float test_data_parallel(struct fann *ann, struct fann_train_data *data, const u
 			{
 				j=omp_get_thread_num();
 
-				fann_type* temp_predicted_output=fann_test(ann_vect[j], data->input[i],data->output[i]);
+				fann_type* temp_predicted_output=fann_test(ann_vect[j], data->input[i],data->output[i], data->weight[i]);
 				for(unsigned int k=0;k<data->num_output;++k)
 				{
 					predicted_outputs[i][k]=temp_predicted_output[k];
@@ -1104,7 +1104,7 @@ float test_data_parallel(struct fann *ann, struct fann_train_data *data, const u
 	for(i=0;i<(int)threadnumb;++i)
 	{
 		ann->MSE_value+= ann_vect[i]->MSE_value;
-		ann->num_MSE+=ann_vect[i]->num_MSE;
+		ann->weight_MSE+=ann_vect[i]->weight_MSE;
 		fann_destroy(ann_vect[i]);
 	}
 	return fann_get_MSE(ann);

@@ -52,7 +52,7 @@ int main()
 	fann_reset_MSE(ann);
 	for(i = 0; i < fann_length_train_data(test_data); i++)
 	{
-		fann_test(ann, test_data->input[i], test_data->output[i]);
+		fann_test(ann, test_data->input[i], test_data->output[i], test_data->weight[i]);
 	}
 	printf("MSE error on test data: %f\n", fann_get_MSE(ann));
 

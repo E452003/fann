@@ -61,6 +61,7 @@ struct fann_train_data
 	unsigned int num_output;
 	fann_type **input;
 	fann_type **output;
+	fann_type *weight;
 };
 
 /* Section: FANN Training */
@@ -78,6 +79,7 @@ struct fann_train_data
    	ann - The neural network structure
    	input - an array of inputs. This array must be exactly <fann_get_num_input> long.
    	desired_output - an array of desired outputs. This array must be exactly <fann_get_num_output> long.
+   	weight - an array of weights.
    	
    	See also:
    		<fann_train_on_data>, <fann_train_epoch>
@@ -85,7 +87,7 @@ struct fann_train_data
    	This function appears in FANN >= 1.0.0.
  */ 
 FANN_EXTERNAL void FANN_API fann_train(struct fann *ann, fann_type * input,
-									   fann_type * desired_output);
+									   fann_type * desired_output, fann_type weight);
 
 #endif	/* NOT FIXEDFANN */
 	
@@ -100,7 +102,7 @@ FANN_EXTERNAL void FANN_API fann_train(struct fann *ann, fann_type * input,
    This function appears in FANN >= 1.0.0.
 */ 
 FANN_EXTERNAL fann_type * FANN_API fann_test(struct fann *ann, fann_type * input,
-												 fann_type * desired_output);
+												 fann_type * desired_output, fann_type weight);
 
 /* Function: fann_get_MSE
    Reads the mean square error from the network.
@@ -276,7 +278,7 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train(unsigned int n
 
     This function appears in FANN >= 2.3.0
 */ 
-FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_pointer_array(unsigned int num_data, unsigned int num_input, fann_type **input, unsigned int num_output, fann_type **output);
+FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_pointer_array(unsigned int num_data, unsigned int num_input, fann_type **input, unsigned int num_output, fann_type **output, fann_type *weight);
 
 /* Function: fann_create_train_array
    Creates an training data struct and fills it with data from provided arrays, where the arrays must have the dimensions:
@@ -293,7 +295,7 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_pointer_array(
 
     This function appears in FANN >= 2.3.0
 */ 
-FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_array(unsigned int num_data, unsigned int num_input, fann_type *input, unsigned int num_output, fann_type *output);
+FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_array(unsigned int num_data, unsigned int num_input, fann_type *input, unsigned int num_output, fann_type *output, fann_type weight);
 
 /* Function: fann_create_train_from_callback
    Creates the training data struct from a user supplied function.
@@ -332,7 +334,8 @@ FANN_EXTERNAL struct fann_train_data * FANN_API fann_create_train_from_callback(
                                                                  unsigned int,
                                                                  unsigned int,
                                                                  fann_type * ,
-                                                                 fann_type * ));
+                                                                 fann_type * ,
+                                                                 fann_type));
 
 /* Function: fann_destroy_train
    Destructs the training data and properly deallocates all of the associated data.
