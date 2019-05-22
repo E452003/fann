@@ -154,12 +154,4 @@ install (FILES
  DESTINATION ${CMAKE_CONFIG_DIR}
  )
 
-################# compile tests ################
-
-ADD_SUBDIRECTORY( lib/googletest )
-
-if(COMPILER_SUPPORTS_CXX11)
-  ADD_SUBDIRECTORY( tests )
-endif()
-
 ENDIF()
